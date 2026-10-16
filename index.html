@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Track & Field Records</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400">
+          <i class="fa-solid fa-stopwatch text-base"></i>
+        </div>
+        <h1 class="text-lg font-bold tracking-wide text-white">TrackNote Records</h1>
+      </div>
+      <button id="openAddModalBtn" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition shadow-lg shadow-sky-500/20">
+        <i class="fa-solid fa-plus"></i>
+        <span>記録追加</span>
+      </button>
+    </div>
+  </header>
+  <!-- Main Container -->
+  <main class="max-w-md mx-auto px-4 pt-4">
+
+    <!-- Event Category Tabs -->
+    <div class="mb-4">
+      <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">種目選択</label>
+      <div id="eventTabs" class="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
+        <!-- JSでタブ生成 -->
+      </div>
+    </div>
+
+    <!-- Sorting Control & PB Banner -->
+    <div class="bg-slate-800/80 rounded-xl p-3 border border-slate-700/60 mb-4 flex items-center justify-between">
+      <div>
+        <span class="text-xs text-slate-400 block mb-0.5">自己ベスト (PB)</span>
+        <span id="pbDisplay" class="text-lg font-extrabold text-sky-400">--</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-400"><i class="fa-solid fa-sort"></i></span>
+        <select id="sortSelect" class="bg-slate-900 text-xs font-medium text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-sky-500">
+          <option value="dateDesc">日付（新しい順）</option>
+          <option value="dateAsc">日付（古い順）</option>
+          <option value="rankAsc">タイム・記録が良い順</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Record List -->
+    <div id="recordList" class="space-y-3">
+      <!-- JSでカード挿入 -->
+    </div>
+
+  </main>
+  <!-- Add Record Modal -->
+  <div id="addModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <h2 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-sky-400"></i> 新しい記録の保存
+        </h2>
+        <button id="closeAddModalBtn" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="addRecordForm" class="p-4 overflow-y-auto space-y-4 text-sm">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">種目</label>
+          <select id="modalEvent" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+            <!-- 種目オプション -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">日付 *</label>
+            <input type="date" id="modalDate" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label id="recordValueLabel" class="block text-xs text-slate-400 mb-1">タイム (秒) *</label>
+            <input type="number" step="0.01" id="modalValue" placeholder="例: 11.50" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">大会名</label>
+          <input type="text" id="modalMeet" placeholder="例: 全国高校総体 予選" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+        </div>
+
+        <!-- Wind & Lane container (Conditional) -->
+        <div id="windLaneContainer" class="grid grid-cols-2 gap-3">
+          <div id="windInputGroup">
+            <label class="block text-xs text-slate-400 mb-1">風速 (m/s) <span class="text-slate-500">(+追い/-向)</span></label>
+            <input type="number" step="0.1" id="modalWind" placeholder="+1.5" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div id="laneInputGroup">
+            <label class="block text-xs text-slate-400 mb-1">レーン (1-8)</label>
+            <select id="modalLane" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+              <option value="4">4 レーン (標準)</option>
+              <option value="1">1 レーン (急カーブ)</option>
+              <option value="2">2 レーン</option>
+              <option value="3">3 レーン</option>
+              <option value="5">5 レーン</option>
+              <option value="6">6 レーン</option>
+              <option value="7">7 レーン</option>
+              <option value="8">8 レーン (緩カーブ)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">動画ファイル (オリジナル画質保存)</label>
+          <input type="file" id="modalVideo" accept="video/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-slate-800 file:text-sky-400 hover:file:bg-slate-700">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">メモ</label>
+          <textarea id="modalMemo" rows="2" placeholder="コンディションや反省点" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500"></textarea>
+        </div>
+
+        <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-3 rounded-xl transition shadow-lg shadow-sky-500/20 text-base mt-2">
+          保存する
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail & Wind Simulation Modal -->
+  <div id="detailModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <h2 id="detailTitle" class="text-base font-bold text-white">記録の詳細</h2>
+        <button id="closeDetailModalBtn" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-4 text-sm">
+        <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700/60 text-center">
+          <span id="detailMeetName" class="text-xs text-slate-400 block mb-1">--</span>
+          <div id="detailOriginalDisplay" class="text-3xl font-extrabold text-white">--</div>
+          <div id="detailMeta" class="text-xs text-slate-400 mt-2 flex justify-center gap-3">
+            <span id="detailDate">--</span>
+            <span id="detailOriginalWind">--</span>
+            <span id="detailLane">--</span>
+          </div>
+        </div>
+
+        <div id="windSimSection" class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-wind"></i> 風速シミュレーション
+            </span>
+            <span id="simTargetWindText" class="text-xs font-semibold bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded border border-sky-500/30">
+              0.0m/s換算
+            </span>
+          </div>
+
+          <div class="text-center py-2 bg-slate-900/60 rounded-lg border border-slate-800">
+            <div id="simConvertedValue" class="text-2xl font-black text-sky-400">--</div>
+            <div id="simDeltaText" class="text-xs font-semibold text-slate-400 mt-0.5">
+              元のレース記録との差: <span id="simDeltaValue">0.00s</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>向かい風 -5.0</span>
+              <span id="sliderValue">0.0 m/s</span>
+              <span>追い風 +5.0</span>
+            </div>
+            <input type="range" id="windSlider" min="-5.0" max="5.0" step="0.1" value="0.0" class="w-full accent-sky-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                      </div>
+        </div>
+
+        <div id="videoContainer" class="hidden">
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">レース動画</label>
+          <video id="videoPlayer" controls class="w-full rounded-xl bg-black max-h-56"></video>
+        </div>
+
+        <div id="memoContainer" class="hidden">
+          <label class="block text-xs font-semibold text-slate-400 mb-1">メモ</label>
+          <p id="detailMemoText" class="text-xs text-slate-300 bg-slate-800/40 p-3 rounded-lg border border-slate-800 whitespace-pre-wrap"></p>
+        </div>
+
+        <div class="pt-2 flex justify-end">
+          <button id="deleteRecordBtn" class="text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
+            <i class="fa-solid fa-trash"></i> この記録を削除
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex-col items-center justify-center">
+    <div class="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+    <p class="text-white text-sm font-semibold">保存中...</p>
+    <p class="text-xs text-slate-400 mt-1">動画を含むデータを処理しています</p>
+  </div>
+    <script>
+    const EVENTS = [
+      { id: '100m', name: '100m', unit: 's', hasWind: true, hasLane: false, isField: false },
+      { id: '200m', name: '200m', unit: 's', hasWind: true, hasLane: true, isField: false },
+      { id: '400m', name: '400m', unit: 's', hasWind: false, hasLane: false, isField: false },
+      { id: '800m', name: '800m', unit: 's', hasWind: false, hasLane: false, isField: false },
+      { id: '1500m', name: '1500m', unit: 's', hasWind: false, hasLane: false, isField: false },
+      { id: '100mH', name: '100mH', unit: 's', hasWind: true, hasLane: false, isField: false },
+      { id: '110mH', name: '110mH', unit: 's', hasWind: true, hasLane: false, isField: false },
+      { id: '400mH', name: '400mH', unit: 's', hasWind: false, hasLane: false, isField: false },
+      { id: 'lj', name: '走幅跳', unit: 'm', hasWind: true, hasLane: false, isField: true },
+      { id: 'tj', name: '三段跳', unit: 'm', hasWind: true, hasLane: false, isField: true },
+      { id: 'hj', name: '走高跳', unit: 'm', hasWind: false, hasLane: false, isField: true },
+      { id: 'pv', name: '棒高跳', unit: 'm', hasWind: false, hasLane: false, isField: true },
+      { id: 'sp', name: '砲丸投', unit: 'm', hasWind: false, hasLane: false, isField: true },
+      { id: 'dt', name: '円盤投', unit: 'm', hasWind: false, hasLane: false, isField: true },
+      { id: 'jt', name: 'やり投', unit: 'm', hasWind: false, hasLane: false, isField: true }
+    ];
+
+    const DB_NAME = 'TrackNoteRecordsDB';
+    const DB_VERSION = 1;
+    let db = null;
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const dbRef = e.target.result;
+          if (!dbRef.objectStoreNames.contains('records')) {
+            dbRef.createObjectStore('records', { keyPath: 'id' });
+          }
+        };
+        request.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function getAllRecordsFromDB() {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('records', 'readonly');
+        const store = tx.objectStore('records');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function saveRecordToDB(record) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('records', 'readwrite');
+        const store = tx.objectStore('records');
+        const req = store.put(record);
+        req.onsuccess = () => resolve();
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function deleteRecordFromDB(id) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('records', 'readwrite');
+        const store = tx.objectStore('records');
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    let records = [];
+    let activeEventId = '100m';
+    let currentSelectedRecord = null;
+    let currentVideoObjectUrl = null;
+    function calculateWindEffect(eventId, timeOrDist, windSpeed, lane = 4) {
+      if (windSpeed === 0) return 0;
+      const v = parseFloat(timeOrDist);
+      if (isNaN(v) || v <= 0) return 0;
+
+      let effect = 0;
+      if (eventId === '100m') {
+        effect = -0.10 * windSpeed;
+      } else if (eventId === '200m') {
+        const laneFactors = { 1: 0.62, 2: 0.65, 3: 0.68, 4: 0.70, 5: 0.72, 6: 0.74, 7: 0.75, 8: 0.76 };
+        const factor = laneFactors[lane] || 0.70;
+        effect = -0.09 * windSpeed * (factor / 0.70);
+      } else if (eventId === '100mH' || eventId === '110mH') {
+        effect = -0.085 * windSpeed;
+      } else if (eventId === 'lj' || eventId === 'tj') {
+        return 0.10 * windSpeed;
+      }
+      return effect;
+    }
+
+    function convertPerformance(eventId, originalValue, origWind, targetWind, lane = 4) {
+      const val = parseFloat(originalValue);
+      if (isNaN(val)) return { value: '--', delta: 0 };
+
+      const ev = EVENTS.find(e => e.id === eventId);
+      if (!ev || !ev.hasWind) return { value: val.toFixed(2), delta: 0 };
+
+      const origWindVal = parseFloat(origWind) || 0;
+      const targetWindVal = parseFloat(targetWind) || 0;
+
+      const origEffect = calculateWindEffect(eventId, val, origWindVal, lane);
+      const targetEffect = calculateWindEffect(eventId, val, targetWindVal, lane);
+
+      const delta = targetEffect - origEffect;
+      const convertedVal = val + delta;
+
+      return {
+        value: convertedVal.toFixed(2),
+        delta: delta
+      };
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initDB();
+      records = await getAllRecordsFromDB();
+
+      renderEventTabs();
+      updateFormFields();
+      renderRecordList();
+
+      document.getElementById('openAddModalBtn').addEventListener('click', openAddModal);
+      document.getElementById('closeAddModalBtn').addEventListener('click', closeAddModal);
+      document.getElementById('closeDetailModalBtn').addEventListener('click', closeDetailModal);
+      document.getElementById('addRecordForm').addEventListener('submit', handleAddRecord);
+      document.getElementById('modalEvent').addEventListener('change', updateFormFields);
+      document.getElementById('sortSelect').addEventListener('change', renderRecordList);
+      document.getElementById('windSlider').addEventListener('input', handleSliderChange);
+      document.getElementById('deleteRecordBtn').addEventListener('click', handleDeleteRecord);
+    });
+    function renderEventTabs() {
+      const container = document.getElementById('eventTabs');
+      container.innerHTML = EVENTS.map(ev => `
+        <button type="button" onclick="selectEvent('${ev.id}')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${activeEventId === ev.id ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
+          ${ev.name}
+        </button>
+      `).join('');
+
+      const select = document.getElementById('modalEvent');
+      select.innerHTML = EVENTS.map(ev => `
+        <option value="${ev.id}" ${ev.id === activeEventId ? 'selected' : ''}>${ev.name}</option>
+      `).join('');
+    }
+
+    function selectEvent(eventId) {
+      activeEventId = eventId;
+      renderEventTabs();
+      renderRecordList();
+    }
+
+    function updateFormFields() {
+      const evId = document.getElementById('modalEvent').value;
+      const ev = EVENTS.find(e => e.id === evId);
+      if (!ev) return;
+
+      const windLaneContainer = document.getElementById('windLaneContainer');
+      const laneGroup = document.getElementById('laneInputGroup');
+      const valueLabel = document.getElementById('recordValueLabel');
+
+      valueLabel.textContent = `${ev.isField ? '記録 (m)' : 'タイム (秒)'} *`;
+
+      if (ev.hasWind) {
+        windLaneContainer.classList.remove('hidden');
+        if (ev.hasLane) {
+          laneGroup.classList.remove('hidden');
+        } else {
+          laneGroup.classList.add('hidden');
+        }
+      } else {
+        windLaneContainer.classList.add('hidden');
+      }
+    }
+
+    function getPB(eventId) {
+      const ev = EVENTS.find(e => e.id === eventId);
+      const evRecords = records.filter(r => r.eventId === eventId);
+      if (evRecords.length === 0) return '--';
+
+      if (ev.isField) {
+        const max = Math.max(...evRecords.map(r => parseFloat(r.value)));
+        return `${max.toFixed(2)}m`;
+      } else {
+        const min = Math.min(...evRecords.map(r => parseFloat(r.value)));
+        return `${min.toFixed(2)}s`;
+      }
+    }
+
+    function renderRecordList() {
+      const container = document.getElementById('recordList');
+      const ev = EVENTS.find(e => e.id === activeEventId);
+      const sortMode = document.getElementById('sortSelect').value;
+
+      document.getElementById('pbDisplay').textContent = getPB(activeEventId);
+
+      let filtered = records.filter(r => r.eventId === activeEventId);
+
+      filtered.sort((a, b) => {
+        if (sortMode === 'dateDesc') return new Date(b.date) - new Date(a.date);
+        if (sortMode === 'dateAsc') return new Date(a.date) - new Date(b.date);
+        if (sortMode === 'rankAsc') {
+          const valA = parseFloat(a.value);
+          const valB = parseFloat(b.value);
+          return ev.isField ? valB - valA : valA - valB;
+        }
+        return 0;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-slate-500 bg-slate-800/30 rounded-2xl border border-slate-800/80">
+            <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
+            <p class="text-xs">まだ記録がありません</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(r => {
+        const windText = (r.wind !== null && r.wind !== undefined && r.wind !== '') 
+          ? `${parseFloat(r.wind) >= 0 ? '+' : ''}${parseFloat(r.wind).toFixed(1)}m` 
+          : '';
+        const laneText = r.lane ? `${r.lane}レーン` : '';
+
+        return `
+          <div onclick="openDetailModal('${r.id}')" class="bg-slate-800/80 hover:bg-slate-800 rounded-xl p-3.5 border border-slate-700/60 cursor-pointer transition flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">${ev.name}</span>
+                <span class="text-xs text-slate-400">${r.meet || '公式記録'}</span>
+              </div>
+              <div class="text-2xl font-black text-white tracking-tight">
+                ${parseFloat(r.value).toFixed(2)}<span class="text-sm font-normal text-slate-400 ml-0.5">${ev.unit}</span>
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
+                <span><i class="fa-regular fa-calendar text-slate-500 mr-1"></i>${r.date}</span>
+                ${windText ? `<span class="bg-slate-900 px-1.5 py-0.5 rounded text-slate-300 font-medium">${windText}</span>` : ''}
+                ${laneText ? `<span class="bg-slate-900 px-1.5 py-0.5 rounded text-slate-300 font-medium">${laneText}</span>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-slate-500">
+              ${r.videoBlob ? '<i class="fa-solid fa-circle-play text-sky-400 text-base"></i>' : ''}
+              <i class="fa-solid fa-chevron-right text-xs"></i>
+                          </div>
+          </div>
+        `;
+      }).join('');
+    }
+        function openAddModal() {
+      document.getElementById('addModal').classList.remove('hidden');
+      document.getElementById('modalDate').value = new Date().toISOString().split('T')[0];
+      updateFormFields();
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.add('hidden');
+      document.getElementById('addRecordForm').reset();
+    }
+
+    async function handleAddRecord(e) {
+      e.preventDefault();
+      showLoading(true);
+
+      try {
+        const evId = document.getElementById('modalEvent').value;
+        const date = document.getElementById('modalDate').value;
+        const value = document.getElementById('modalValue').value;
+        const meet = document.getElementById('modalMeet').value;
+        const wind = document.getElementById('modalWind').value;
+        const lane = document.getElementById('modalLane').value;
+        const memo = document.getElementById('modalMemo').value;
+        const videoFile = document.getElementById('modalVideo').files[0];
+
+        const newRecord = {
+          id: 'rec_' + Date.now(),
+          eventId: evId,
+          date: date,
+          value: parseFloat(value).toFixed(2),
+          meet: meet || '',
+          wind: wind !== '' ? parseFloat(wind) : null,
+          lane: lane ? parseInt(lane) : null,
+          memo: memo || '',
+          videoBlob: videoFile || null
+        };
+
+        await saveRecordToDB(newRecord);
+        records.push(newRecord);
+
+        activeEventId = evId;
+        renderEventTabs();
+        renderRecordList();
+        closeAddModal();
+      } catch (err) {
+        alert('保存中にエラーが発生しました');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function openDetailModal(recordId) {
+      const rec = records.find(r => r.id === recordId);
+      if (!rec) return;
+
+      currentSelectedRecord = rec;
+      const ev = EVENTS.find(e => e.id === rec.eventId);
+
+      document.getElementById('detailTitle').textContent = `${ev.name} 記録詳細`;
+      document.getElementById('detailMeetName').textContent = rec.meet || '大会名未登録';
+      document.getElementById('detailOriginalDisplay').textContent = `${rec.value} ${ev.unit}`;
+      document.getElementById('detailDate').textContent = rec.date;
+
+      const windText = (rec.wind !== null && rec.wind !== undefined) ? `風速: ${rec.wind >= 0 ? '+' : ''}${rec.wind} m/s` : '';
+      const laneText = rec.lane ? `${rec.lane}レーン` : '';
+      
+      document.getElementById('detailOriginalWind').textContent = windText;
+      document.getElementById('detailLane').textContent = laneText;
+
+      const windSection = document.getElementById('windSimSection');
+      if (ev.hasWind) {
+        windSection.classList.remove('hidden');
+        const slider = document.getElementById('windSlider');
+        const initWind = rec.wind !== null ? rec.wind : 0.0;
+        slider.value = initWind;
+        updateSimulationUI(initWind);
+      } else {
+        windSection.classList.add('hidden');
+      }
+
+      const videoContainer = document.getElementById('videoContainer');
+      const videoPlayer = document.getElementById('videoPlayer');
+      
+      if (currentVideoObjectUrl) {
+        URL.revokeObjectURL(currentVideoObjectUrl);
+        currentVideoObjectUrl = null;
+      }
+
+      if (rec.videoBlob) {
+        videoContainer.classList.remove('hidden');
+        currentVideoObjectUrl = URL.createObjectURL(rec.videoBlob);
+        videoPlayer.src = currentVideoObjectUrl;
+      } else {
+        videoContainer.classList.add('hidden');
+        videoPlayer.src = '';
+      }
+
+      const memoContainer = document.getElementById('memoContainer');
+      if (rec.memo) {
+        memoContainer.classList.remove('hidden');
+        document.getElementById('detailMemoText').textContent = rec.memo;
+      } else {
+        memoContainer.classList.add('hidden');
+      }
+
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.add('hidden');
+      const videoPlayer = document.getElementById('videoPlayer');
+      videoPlayer.pause();
+      videoPlayer.src = '';
+
+      if (currentVideoObjectUrl) {
+        URL.revokeObjectURL(currentVideoObjectUrl);
+        currentVideoObjectUrl = null;
+      }
+      currentSelectedRecord = null;
+    }
+
+    function handleSliderChange(e) {
+      const targetWind = parseFloat(e.target.value);
+      updateSimulationUI(targetWind);
+    }
+
+    function updateSimulationUI(targetWind) {
+      if (!currentSelectedRecord) return;
+      
+      const ev = EVENTS.find(e => e.id === currentSelectedRecord.eventId);
+      const origWind = currentSelectedRecord.wind !== null ? currentSelectedRecord.wind : 0.0;
+      const lane = currentSelectedRecord.lane || 4;
+
+      document.getElementById('sliderValue').textContent = `${targetWind >= 0 ? '+' : ''}${targetWind.toFixed(1)} m/s`;
+      document.getElementById('simTargetWindText').textContent = `${targetWind >= 0 ? '+' : ''}${targetWind.toFixed(1)}m/s換算`;
+
+      const result = convertPerformance(currentSelectedRecord.eventId, currentSelectedRecord.value, origWind, targetWind, lane);
+
+      document.getElementById('simConvertedValue').textContent = `${result.value} ${ev.unit}`;
+
+      const deltaVal = result.delta;
+      const deltaFormatted = Math.abs(deltaVal).toFixed(2);
+      const deltaElement = document.getElementById('simDeltaValue');
+
+      if (deltaVal === 0) {
+        deltaElement.textContent = '0.00s (変化なし)';
+        deltaElement.className = 'text-slate-400 font-bold';
+      } else if (ev.isField) {
+        if (deltaVal > 0) {
+          deltaElement.textContent = `+${deltaFormatted}m (伸びる)`;
+          deltaElement.className = 'text-emerald-400 font-bold';
+        } else {
+          deltaElement.textContent = `-${deltaFormatted}m (縮む)`;
+          deltaElement.className = 'text-rose-400 font-bold';
+        }
+      } else {
+        if (deltaVal < 0) {
+          deltaElement.textContent = `-${deltaFormatted}秒 (速くなる)`;
+          deltaElement.className = 'text-emerald-400 font-bold';
+        } else {
+          deltaElement.textContent = `+${deltaFormatted}秒 (遅くなる)`;
+          deltaElement.className = 'text-rose-400 font-bold';
+        }
+      }
+    }
+
+    async function handleDeleteRecord() {
+      if (!currentSelectedRecord) return;
+      if (!confirm('この記録を削除しますか？')) return;
+
+      showLoading(true);
+      try {
+        await deleteRecordFromDB(currentSelectedRecord.id);
+        records = records.filter(r => r.id !== currentSelectedRecord.id);
+        renderRecordList();
+        closeDetailModal();
+      } catch (err) {
+        alert('削除中にエラーが発生しました');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function showLoading(show) {
+      const overlay = document.getElementById('loadingOverlay');
+      if (show) overlay.classList.remove('hidden');
+      else overlay.classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
